@@ -1,0 +1,12 @@
+1	ROOT	A
+1	ROOT	B
+0.5	A	A A
+0.5	A	A B
+0.5	A	B A
+0.5	A	B B
+0.5	B	A A
+0.5	B	A B
+0.5	B	B A
+0.5	B	B B
+0.5	A	x
+0.5	B	x

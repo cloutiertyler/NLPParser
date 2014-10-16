@@ -1,0 +1,139 @@
+1. State of the Art Parser
+
+Both the Stanford and Berkeley parsers seemed to be fooled by the sentence,
+
+"Why did you bring that table that the book was on up?"
+
+which contains center embedding and ends in two prepositions. They both parsed
+the sentence in the following way.
+
+(ROOT
+  (SBARQ
+    (WHADVP (WRB Why))
+    (SQ (VBD did)
+      (NP (PRP you))
+      (VP (VB bring)
+        (NP
+          (NP (DT that) (NN table))
+          (SBAR (IN that)
+            (S
+              (NP (DT the) (NN book))
+              (VP (VBD was)
+                (ADVP (RB on) (RB up))))))))
+    (. ?)))
+
+Clearly, however, "on up" is not an adverb phrase in this context, but rather
+on was a preposition refering to the table.
+
+Interestingly, the sentence,
+
+"Is he okay, the person that fell?"
+
+was parsed incorrectly by the Stanford parser, but parsed correctly by the
+Berkeley parser. The Stanford parser produced,
+
+(ROOT
+  (SQ (VBZ Is)
+    (NP (PRP he))
+    (NP
+      (NP
+        (NP (NNP okay))
+        (, ,)
+        (NP (DT the) (NN person)))
+      (SBAR
+        (WHNP (WDT that))
+        (S
+          (VP (VBD fell)))))
+    (. ?)))
+
+which is incorrect in that "okay, person that fell" is not a noun phrase. The
+Berkeley parser produced,
+
+(ROOT
+  (SQ (VBZ Is)
+    (NP (PRP he))
+    (ADJP (JJ okay))
+    (, ,)
+    (NP
+      (NP (DT the) (NN person))
+      (SBAR
+        (WHNP (WDT that))
+        (S
+          (VP (VBD fell)))))
+    (. ?)))
+
+which seems to us to be the correct parse. Similarly, the Stanford parser
+parsed the reverse sentence, 
+
+"The person that fell, is he okay?"
+
+incorrectly as well, while the Berkeley parser parsed correctly. Stanford's output was 
+
+(ROOT
+  (SQ
+    (S
+      (NP
+        (NP (DT The) (NN person))
+        (NP (DT that)))
+      (VP (VBD fell)))
+    (, ,)
+    (SQ (VBZ is)
+      (NP (PRP he))
+      (ADJP (JJ okay)))
+    (. ?)))
+
+which is incorrect because "The person that" is not a noun phrase. Berkeley,
+however, correctly identified the that clause with the following parse.
+
+(ROOT
+  (S
+    (NP
+      (NP (DT The) (NN person))
+      (SBAR
+        (WHNP (WDT that))
+        (S
+          (VP (VBD fell)))))
+    (, ,)
+    (SQ (VBZ is)
+      (NP (PRP he))
+      (ADJP (JJ okay))
+      (. ?))))
+
+Again quite interestingly, the sentence 
+
+"A photo tour of one of the largest arcades in the world!"
+
+grabbed from a Reddit post title is correctly identified as a fragment by the
+Berkeley parser.
+
+(ROOT
+  (FRAG
+    (NP
+      (NP (DT A) (JJ photo) (NN tour))
+      (PP (IN of)
+        (NP
+          (NP (CD one))
+          (PP (IN of)
+            (NP
+              (NP (DT the) (JJS largest) (NNS arcades))
+              (PP (IN in)
+                (NP (DT the) (NN world))))))))
+    (. !)))
+
+I've never thought about how something looks like. 
+vs
+I've never thought about how something looks. 
+
+Also words like "gimme" don't seem to fool the parser.
+
+2.
+
+(a)
+
+(b)
+
+(c)
+
+Please see "parse.py" for more details.
+
+
