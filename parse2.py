@@ -82,13 +82,15 @@ class Parser(object):
             column_set = set(column)
             next_column = self.parse_table[i+1]
             next_column_set = set(next_column)
+            symbols_predicted = set()
             while j < len(column):
                 state = column[j]
                 symbols = state.rule.symbols
                 if symbols:
                     next_symbol = symbols[0]
-                    if next_symbol in self.rules:
+                    if next_symbol in self.rules and next_symbol not in symbols_predicted:
                         #predict
+                        symbols_predicted.add(next_symbol)
                         self.predict(next_symbol, i, column, column_set)
                     else:
                         #scan
