@@ -22,6 +22,7 @@ class Parser(object):
     def __init__(self, grammar_file_name):
         self.parse_table = None
         self.parse_table_size = 0
+        self.left_parent_table = defaultdict(set) 
         self.rules = defaultdict(list)
         with open(grammar_file_name, 'r') as f:
             for line in f.readlines():
@@ -30,7 +31,9 @@ class Parser(object):
                 if line == "":
                     continue
                 groups = line.split()
-                self.rules[groups[1]].append(ProductionRule(groups[1], tuple(groups[2:]), -math.log(float(groups[0]))))
+                prod_rule = ProductionRule(groups[1], tuple(groups[2:]), -math.log(float(groups[0]), 2))
+                self.left_parent_table[prod_rule.symbols[0]].add(prod_rule.nonterminal)
+                self.rules[prod_rule.nonterminal].append(prod_rule)
    
     def add_state_to_column(self, state, column, column_set):
         if state not in column_set:
@@ -44,15 +47,16 @@ class Parser(object):
                 grabber.actual_value.previous_state = state.previous_state
                 grabber.actual_value.new_constituent = state.new_constituent
 
-    def predict(self, predict_symbol, start_position, column, column_set):
+    def predict(self, predict_symbol, start_position, column, column_set, left_ancestors):
         predict_rules = self.rules[predict_symbol]
         for predict_rule in predict_rules:
-            new_state = ParseState(start_position, predict_rule)
-            self.add_state_to_column(new_state, column, column_set)
+            if predict_rule.symbols[0] in left_ancestors:
+                new_state = ParseState(start_position, predict_rule)
+                self.add_state_to_column(new_state, column, column_set)
     
     def scan(self, word, terminal, cur_state, next_column, next_column_set):
         if word == terminal:
-            new_state = deepcopy(cur_state)
+            new_state = ParseState(cur_state.start_pos, cur_state.rule)
             new_state.adv_state() #terminals are free
             new_state.previous_state = cur_state
             new_state.new_constituent = terminal
@@ -65,7 +69,7 @@ class Parser(object):
             
             #This may be interesting if nonterinals are in the sentence.
             if previous_symbols and previous_symbols[0] == state.rule.nonterminal:
-                new_state = deepcopy(previous_state)
+                new_state = ParseState(previous_state.start_pos, previous_state.rule)
                 new_state.adv_state(state.rule.weight)
                 new_state.previous_state = previous_state
                 new_state.new_constituent = state
@@ -83,6 +87,9 @@ class Parser(object):
             next_column = self.parse_table[i+1]
             next_column_set = set(next_column)
             symbols_predicted = set()
+            left_ancestors = set()
+            left_ancestors.add(word)
+            self.add_ancestors(left_ancestors, word)
             while j < len(column):
                 state = column[j]
                 symbols = state.rule.symbols
@@ -91,7 +98,7 @@ class Parser(object):
                     if next_symbol in self.rules and next_symbol not in symbols_predicted:
                         #predict
                         symbols_predicted.add(next_symbol)
-                        self.predict(next_symbol, i, column, column_set)
+                        self.predict(next_symbol, i, column, column_set, left_ancestors)
                     else:
                         #scan
                         self.scan(word, next_symbol, state, next_column, next_column_set)
@@ -101,7 +108,13 @@ class Parser(object):
                 #self.print_column_states(i)
                 j += 1
         self.parse_table_size = i
-    
+
+    def add_ancestors(self, left_ancestors, child):
+        for left_parent in self.left_parent_table[child]:
+            if left_parent not in left_ancestors:
+                left_ancestors.add(left_parent)
+                self.add_ancestors(left_ancestors, left_parent)
+
     def print_column_states(self, column_num):
         column = self.parse_table[column_num]
         print 'column ' + str(column_num)
