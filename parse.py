@@ -4,20 +4,6 @@ from copy import *
 from argparse import *
 from collections import defaultdict
 
-# The Grab class is necessary so that we can retrieve an element from a Python
-# Set in O(1) time. We could also have used our own implementation of a set
-# using a hash table.
-class Grab:
-    def __init__(self, value):
-        self.search_value = value
-    def __hash__(self):
-        return hash(self.search_value)
-    def __eq__(self, other):
-        if self.search_value == other:
-            self.actual_value = other
-            return True
-        return False
-
 class Parser(object):
     def __init__(self, grammar_file_name):
         self.parse_table = None
@@ -30,19 +16,18 @@ class Parser(object):
                 if line == "":
                     continue
                 groups = line.split()
-                self.rules[groups[1]].append(ProductionRule(groups[1], tuple(groups[2:]), -math.log(float(groups[0]))))
+                self.rules[groups[1]].append(ProductionRule(groups[1], tuple(groups[2:]), -math.log(float(groups[0]), 2)))
    
     def add_state_to_column(self, state, column, column_set):
         if state not in column_set:
             column.append(state)
-            column_set.add(state)
+            column_set[state] = state
         else:
-            grabber = Grab(state)             
-            grabber in column_set
-            if state.rule.weight < grabber.actual_value.rule.weight:
-                grabber.actual_value.rule.weight = state.rule.weight
-                grabber.actual_value.previous_state = state.previous_state
-                grabber.actual_value.new_constituent = state.new_constituent
+            old_state = column_set[state]
+            if state.rule.weight < old_state.rule.weight:
+                old_state.rule.weight = state.rule.weight
+                old_state.previous_state = state.previous_state
+                old_state.new_constituent = state.new_constituent
 
     def predict(self, predict_symbol, start_position, column, column_set):
         predict_rules = self.rules[predict_symbol]
@@ -52,7 +37,7 @@ class Parser(object):
     
     def scan(self, word, terminal, cur_state, next_column, next_column_set):
         if word == terminal:
-            new_state = deepcopy(cur_state)
+            new_state = ParseState(cur_state.start_pos, cur_state.rule)
             new_state.adv_state() #terminals are free
             new_state.previous_state = cur_state
             new_state.new_constituent = terminal
@@ -65,7 +50,7 @@ class Parser(object):
             
             #This may be interesting if nonterinals are in the sentence.
             if previous_symbols and previous_symbols[0] == state.rule.nonterminal:
-                new_state = deepcopy(previous_state)
+                new_state = ParseState(previous_state.start_pos, previous_state.rule)
                 new_state.adv_state(state.rule.weight)
                 new_state.previous_state = previous_state
                 new_state.new_constituent = state
@@ -79,9 +64,9 @@ class Parser(object):
         for i, word in enumerate(sentence.split() + ['']):
             j = 0
             column = self.parse_table[i]
-            column_set = set(column)
+            column_set = {}
             next_column = self.parse_table[i+1]
-            next_column_set = set(next_column)
+            next_column_set = {}
             while j < len(column):
                 state = column[j]
                 symbols = state.rule.symbols

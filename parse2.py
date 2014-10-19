@@ -4,20 +4,6 @@ from copy import *
 from argparse import *
 from collections import defaultdict
 
-# The Grab class is necessary so that we can retrieve an element from a Python
-# Set in O(1) time. We could also have used our own implementation of a set
-# using a hash table.
-class Grab:
-    def __init__(self, value):
-        self.search_value = value
-    def __hash__(self):
-        return hash(self.search_value)
-    def __eq__(self, other):
-        if self.search_value == other:
-            self.actual_value = other
-            return True
-        return False
-
 class Parser(object):
     def __init__(self, grammar_file_name):
         self.parse_table = None
@@ -38,14 +24,13 @@ class Parser(object):
     def add_state_to_column(self, state, column, column_set):
         if state not in column_set:
             column.append(state)
-            column_set.add(state)
+            column_set[state] = state
         else:
-            grabber = Grab(state)             
-            grabber in column_set
-            if state.rule.weight < grabber.actual_value.rule.weight:
-                grabber.actual_value.rule.weight = state.rule.weight
-                grabber.actual_value.previous_state = state.previous_state
-                grabber.actual_value.new_constituent = state.new_constituent
+            old_state = column_set[state]
+            if state.rule.weight < old_state.rule.weight:
+                old_state.rule.weight = state.rule.weight
+                old_state.previous_state = state.previous_state
+                old_state.new_constituent = state.new_constituent
 
     def predict(self, predict_symbol, start_position, column, column_set, left_ancestors):
         predict_rules = self.rules[predict_symbol]
@@ -83,9 +68,9 @@ class Parser(object):
         for i, word in enumerate(sentence.split() + ['']):
             j = 0
             column = self.parse_table[i]
-            column_set = set(column)
+            column_set = {}
             next_column = self.parse_table[i+1]
-            next_column_set = set(next_column)
+            next_column_set = {}
             symbols_predicted = set()
             left_ancestors = set()
             left_ancestors.add(word)
