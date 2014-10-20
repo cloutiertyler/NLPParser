@@ -129,10 +129,29 @@ Also words like "gimme" don't seem to fool the parser.
 2.
 
 (a)
+We are able to ensure that our algorithm is within the given time and space
+constraints by making sure that we use the correct datastructures for quick
+lookup times. We use a hash table as a set to determine if a "state" or entry
+is already in a particular column.
 
 (b)
+Adding to the column is simply an append on a Python list and an insertion into
+a Python dictionary, both of which are O(1).
 
 (c)
+Before adding a new state or entry to a column we always check if that state is
+already present. If it is already present, but has a lower weight change the
+weight and backpointers of the state already in the column.
+
+We are able to handle very general rules with this parser through careful design.
+For example NP → NP . and NP causes us no problem because we make no assumptions
+about the nature of each symbol on the right hand side. We simply march the dot
+over to the right as we complete or scan constituents. To that end we consider
+all terminal symbols like "and" as "free" or having zero weight and nonterminals
+as having the weight of all of the rules that were used to make them.
+
+We do in fact have the allowable bug. We did not have time to find a proper work
+around for that bug.
 
 Please see "parse.py" for more details.
 
