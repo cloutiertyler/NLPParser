@@ -5,7 +5,13 @@ from argparse import *
 from collections import defaultdict
 
 class Parser(object):
+    """
+    A Parser is an object that will parse sentences in accordance with a
+    provided grammar. The grammar must be provided to the parser upon
+    initialization.
+    """
     def __init__(self, grammar_file_name):
+        """Builds data structures and preprocesses the grammar."""
         self.parse_table = None
         self.parse_table_size = 0
         self.left_parent_table = defaultdict(set) 
@@ -22,6 +28,9 @@ class Parser(object):
                 self.rules[prod_rule.nonterminal].append(prod_rule)
    
     def add_state_to_column(self, state, column, column_set):
+        """Adds a state to the column if that state does not already exist.
+        If the new state has a lower weight, the old state is updated with the
+        new state."""
         if state not in column_set:
             column.append(state)
             column_set[state] = state
@@ -33,6 +42,7 @@ class Parser(object):
                 old_state.new_constituent = state.new_constituent
 
     def predict(self, predict_symbol, start_position, column, column_set, left_ancestors):
+        """Predicts a new rule for a column based on the left_ancestors."""
         predict_rules = self.rules[predict_symbol]
         for predict_rule in predict_rules:
             if predict_rule.symbols[0] in left_ancestors:
@@ -40,6 +50,7 @@ class Parser(object):
                 self.add_state_to_column(new_state, column, column_set)
     
     def scan(self, word, terminal, cur_state, next_column, next_column_set):
+        """Scans the current word and adds a new state if the word matches the terminal."""
         if word == terminal:
             new_state = ParseState(cur_state.start_pos, cur_state.rule)
             new_state.adv_state() #terminals are free
@@ -48,6 +59,8 @@ class Parser(object):
             self.add_state_to_column(new_state, next_column, next_column_set)
 
     def attach(self, state, column, column_set):
+        """Completes a state and attaches all previous states who needed
+        the completed state in order to continue."""
         #for all incomplete states that end where this completed state starts
         for previous_state in self.parse_table[state.start_pos]:
             previous_symbols = previous_state.rule.symbols
@@ -61,6 +74,7 @@ class Parser(object):
                 self.add_state_to_column(new_state, column, column_set)
 
     def parse_sentence(self, sentence):
+        """Parses a sentence and stores the results in self.parse_table."""
         self.parse_table = defaultdict(list)
         for root_rule in self.rules['ROOT']:
             self.parse_table[0].append(ParseState(0, root_rule)) 
@@ -95,12 +109,14 @@ class Parser(object):
         self.parse_table_size = i
 
     def add_ancestors(self, left_ancestors, child):
+        """Creates a set of all left_ancestors of a child symbol."""
         for left_parent in self.left_parent_table[child]:
             if left_parent not in left_ancestors:
                 left_ancestors.add(left_parent)
                 self.add_ancestors(left_ancestors, left_parent)
 
     def print_column_states(self, column_num):
+        """Prints all of the states or entries in a specific column."""
         column = self.parse_table[column_num]
         print 'column ' + str(column_num)
         for entry in column:
@@ -108,6 +124,8 @@ class Parser(object):
         print
 
     def print_best_parse(self):
+        """Prints the back trace of the best parse in the last column
+        of the parse_table."""
         lowest_weight = 0
         best_parse = None
         for state in self.parse_table[self.parse_table_size]:
@@ -120,6 +138,7 @@ class Parser(object):
         sys.stdout.write('\n')
 
     def print_entry(self, state):
+        """Recursively prints a given state."""
         if type(state) is not ParseState:
             sys.stdout.write(state)
         elif not state.rule.symbols:
@@ -134,6 +153,10 @@ class Parser(object):
             self.print_entry(state.new_constituent)
 
 class ParseState(object):
+    """
+    An object that holds all the information necessary for 
+    an entry in the parse table.
+    """
     def __init__(self, start_pos, rule):
         self.start_pos = start_pos
         self.rule = deepcopy(rule)
@@ -157,6 +180,10 @@ class ParseState(object):
         self.rule.symbols = self.rule.symbols[1:]
 
 class ProductionRule(object):
+    """
+    A production rule as specified by the grammar file.
+    These may be modified by parse states.
+    """
     def __init__(self, nonterminal, symbols, weight):
         self.nonterminal = nonterminal
         self.symbols = symbols
