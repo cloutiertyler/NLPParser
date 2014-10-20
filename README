@@ -214,7 +214,8 @@ and many many times faster than our original implementation, which takes quite a
 while to process wallstreet.sen. These timings were using the pypy implementation
 of the python interpreter.
 
-Please see "parse2.py" for more details.
+Please see "parse2.py" for more details. Please be aware, parse2.py has more
+detailed comments than parse.py.
 
 The following are the results of the parser for wallstreet.sen.
 
