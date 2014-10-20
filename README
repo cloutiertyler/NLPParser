@@ -211,7 +211,8 @@ words in the sentence you would not have to recalculate the set of left ancestor
 The result of these speed ups was that we could complete parsing wallstreet.sen
 in about 48 seconds, which is more than twice the speed of the lisp implementation
 and many many times faster than our original implementation, which takes quite a
-while to process wallstreet.sen
+while to process wallstreet.sen. These timings were using the pypy implementation
+of the python interpreter.
 
 Please see "parse2.py" for more details.
 
