@@ -153,6 +153,60 @@ as having the weight of all of the rules that were used to make them.
 We do in fact have the allowable bug. We did not have time to find a proper work
 around for that bug.
 
+We also implemented one optimization in this part of the assignment by default,
+by only storing every state or entry of the form (3, X → · · · . CDE) as a 
+single entry in each column. Specifically, we simply dropped, the symbols preceding
+the dot, from the entry.
+
 Please see "parse.py" for more details.
 
+3.
+
+In addition to the compression optimization that we implemented in part 2, we
+implemented 2 major optimizations.
+
+The first optimization that we implemented was the strongly recommended batch 
+check for predicting a nonterminal symbol. The purpose of this is to check simply
+if the nonterminal had been predicted before, for the current column. If it had
+been we can just move on, instead of checking if each individual state is already 
+in the column. If the grammar is large this can be a particularly large constant
+saving. This was implemented by building a predicted symbol set for each column.
+After predicting a nonterminal we added that symbol to the set and then we would
+never predict that symbol again if it was in the set of previously predicted symbols.
+Importantly, this optimization is perfectly compatible with the next optimization
+because the word, w_j, in the jth column is constant so it's left ancestors will
+not change.
+
+The second optimization that we implemented was a left-corner optimization. Our
+optimization was slightly different than the suggested optimization in the 
+assignment. It works as follows. For each word in the sentence we build a set
+of all symbols that are "left ancestors" of the word in the grammar. Left ancestor
+means precisely that you can generate the word from the symbol by recurively 
+following the grammars generation rules for the first symbol for any combination
+of grammar rules. Given that we have such a set we can simply check if the first 
+symbol of the rule we are about to predict is in the left ancestor set for the
+word. If the first symbol is a left ancestor predict that rule, otherwise there
+is no point in predicting that rule because it can never be completed. That is to
+say there is no way of reaching the word from the first symbol in this rule.
+
+We build this set by recursively exploring the left parents of word, and adding 
+new parents to the set as long as we have not added them before. Recursively,
+because once we explore the left parents of the word we recursively explore
+the left parents of the left parents, and so forth.
+
+This method is somewhat less complicated that the method described in the assignment
+and as far as we can figure accomplishes exactly the same effect. Furthermore,
+it reduces the memory overhead required, as we no longer need an prefix table as
+required by the assignment's suggested method and additionaly the S table would 
+contain many duplicates since S(A) would include all symbols in S(B) if we had the
+rule A -> B ... where B is a left ancestor of the current word. While this would
+likely be minimal since the sets are not storing duplicate objects it would not
+be insignificant since making a table would probably require hash tables of hash
+tables.
+
+Indeed, our method allows for an addition optimization that we did not implement
+wherein you can store these sets for each word, such that if there are repeated
+words in the sentence you would not have to recalculate the set of left ancestors.
+
+Please see "parse2.py" for more details.
 
