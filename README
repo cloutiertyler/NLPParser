@@ -208,5 +208,10 @@ Indeed, our method allows for an addition optimization that we did not implement
 wherein you can store these sets for each word, such that if there are repeated
 words in the sentence you would not have to recalculate the set of left ancestors.
 
+The result of these speed ups was that we could complete parsing wallstreet.sen
+in about 48 seconds, which is more than twice the speed of the lisp implementation
+and many many times faster than our original implementation, which takes quite a
+while to process wallstreet.sen
+
 Please see "parse2.py" for more details.
 
